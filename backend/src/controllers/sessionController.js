@@ -4,7 +4,7 @@ import User from "../models/User.js";
 // Controller to schedule a session
 export const scheduleSession = async (req, res) => {
   const { menteeId, date, time } = req.body;
-  const mentorId = req.user.id;
+  const mentorId = req.user.id; // Getting mentor's ID from the authenticated user
 
   try {
     // Ensure mentor and mentee exist
@@ -13,6 +13,11 @@ export const scheduleSession = async (req, res) => {
 
     if (!mentor || !mentee) {
       return res.status(404).json({ message: "Mentor or mentee not found" });
+    }
+
+    // Check if the mentor is allowed to schedule for this mentee
+    if (mentor.role !== "mentor") {
+      return res.status(403).json({ message: "Only mentors can schedule sessions" });
     }
 
     // Create the session

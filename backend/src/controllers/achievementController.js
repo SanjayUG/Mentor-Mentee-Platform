@@ -1,3 +1,4 @@
+import User from '../models/User.js';
 import Achievement from "../models/Achievement.js";
 
 export const createAchievement = async (req, res) => {
@@ -23,21 +24,31 @@ export const createAchievement = async (req, res) => {
 
 export const getAchievements = async (req, res) => {
   const { menteeId } = req.params;
+  const mentorId = req.user._id;
 
   try {
-    const mentorId = req.user._id;
 
-    // Verify the mentor-mentee relationship
+    // Check if the requesting user is a mentor
+    const mentor = await User.findById(mentorId);
+    if (mentor.role !== "mentor") {
+      return res.status(403).json({ message: "Only mentors can view achievements" });
+    }
+
+    // Ensure that the mentee exists and has the specified mentorId
     const mentee = await User.findOne({ _id: menteeId, mentorId });
-
     if (!mentee) {
+      console.log("Mentee not found or unauthorized access");
       return res.status(403).json({ message: "Unauthorized to view this mentee's achievements" });
     }
 
+    // Retrieve achievements for the specified menteeId
     const achievements = await Achievement.find({ menteeId });
 
     res.status(200).json({ achievements });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching achievements", error });
+    console.error("Error fetching achievements:", error);
+    res.status(500).json({ message: "Error fetching achievements", error: error.message || error });
   }
 };
+
+
